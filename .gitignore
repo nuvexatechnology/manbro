@@ -43,5 +43,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-.env*
+# PDF / banner scratch artifacts from scripts/ tooling
+/scripts/input.pdf
+/scripts/*_decompressed.txt
+/scripts/*.png

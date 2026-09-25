@@ -12,10 +12,11 @@ export function cn(...inputs: (string | undefined | null | false)[]): string {
 /**
  * Format currency values
  */
-export function formatCurrency(amount: number, currency: string = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(amount: number, currency: string = "INR"): string {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 

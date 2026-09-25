@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { CartProvider } from "@/components/cart/cart-context";
+import { UserAuthProvider } from "@/components/auth/user-auth-context";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export const metadata: Metadata = {
   title: "MANBRO | Premium Apparel & Luxury Apparel",
@@ -30,12 +32,15 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body suppressHydrationWarning className="bg-[#091D12] text-white min-h-screen flex flex-col font-sans antialiased selection:bg-[#d4af37] selection:text-black">
-        <CartProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <CartDrawer />
-          <Footer />
-        </CartProvider>
+        <UserAuthProvider>
+          <CartProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <CartDrawer />
+            <AuthModal />
+            <Footer />
+          </CartProvider>
+        </UserAuthProvider>
       </body>
     </html>
   );

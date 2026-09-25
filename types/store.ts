@@ -83,7 +83,7 @@ export interface CheckoutFormValues {
   state: string;
   pincode: string;
   notes?: string;
-  paymentMethod: "cashfree" | "whatsapp" | "cod" | "card";
+  paymentMethod: "whatsapp" | "cod" | "card";
 }
 
 export type OrderStatus = "NEW" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";

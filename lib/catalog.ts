@@ -1,4 +1,4 @@
-import type { FilterState, Product, Category } from "@/types/store";
+import type { FilterState, Product } from "@/types/store";
 
 export async function getProducts(signal?: AbortSignal): Promise<Product[]> {
   const timeout = AbortSignal.timeout(15000);
@@ -15,21 +15,6 @@ export async function getProducts(signal?: AbortSignal): Promise<Product[]> {
   return data.products;
 }
 
-export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
-  const timeout = AbortSignal.timeout(15000);
-  const response = await fetch("/api/categories", {
-    cache: "no-store",
-    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-  });
-  if (!response.ok) return [];
-
-  const data = await response.json().catch(() => null);
-  if (data?.success === true && Array.isArray(data.categories)) {
-    return data.categories;
-  }
-  return [];
-}
-
 export async function getFeaturedProducts(signal?: AbortSignal): Promise<Product[]> {
   return (await getProducts(signal)).filter((product) => product.isFeatured);
 }
@@ -40,13 +25,7 @@ export async function getProductBySlug(slug: string, signal?: AbortSignal): Prom
 
 export function filterProducts(products: Product[], filters: FilterState): Product[] {
   return products.filter((product) => {
-    if (
-      filters.category &&
-      filters.category !== "All" &&
-      product.category?.trim().toLowerCase() !== filters.category.trim().toLowerCase()
-    ) {
-      return false;
-    }
+    if (filters.category !== "All" && product.category !== filters.category) return false;
 
     if (filters.searchQuery.trim()) {
       const query = filters.searchQuery.toLowerCase();

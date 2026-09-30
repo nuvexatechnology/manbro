@@ -116,11 +116,9 @@ export default function AdminOrderDeskPage() {
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     const res = await updateOrderStatusAction(orderId, newStatus);
-    if (res.success && res.order) {
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? res.order! : o)));
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(res.order);
-      }
+    if (res.success) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+      setSelectedOrder((prev) => (prev && prev.id === orderId ? { ...prev, status: newStatus } : prev));
       showFeedback(`Order #${orderId} marked as ${newStatus}`);
       toast.success(`Order #${orderId} marked as ${newStatus}`);
     } else {
@@ -137,9 +135,10 @@ export default function AdminOrderDeskPage() {
     }
 
     const res = await addIndiaPostTrackingAction(selectedOrder.id, trackingForm);
-    if (res.success && res.order) {
-      setOrders((prev) => prev.map((o) => (o.id === selectedOrder.id ? res.order! : o)));
-      setSelectedOrder(res.order);
+    if (res.success) {
+      const savedTracking = trackingForm;
+      setOrders((prev) => prev.map((o) => (o.id === selectedOrder.id ? { ...o, trackingInfo: savedTracking } : o)));
+      setSelectedOrder((prev) => (prev ? { ...prev, trackingInfo: savedTracking } : prev));
       showFeedback("India Post tracking saved and customer notified!");
       toast.success("India Post tracking saved and customer notified!");
     } else {
@@ -150,9 +149,10 @@ export default function AdminOrderDeskPage() {
   const handleSaveAdminNotes = async () => {
     if (!selectedOrder) return;
     const res = await updateAdminNotesAction(selectedOrder.id, adminNotesInput);
-    if (res.success && res.order) {
-      setOrders((prev) => prev.map((o) => (o.id === selectedOrder.id ? res.order! : o)));
-      setSelectedOrder(res.order);
+    if (res.success) {
+      const savedNotes = adminNotesInput;
+      setOrders((prev) => prev.map((o) => (o.id === selectedOrder.id ? { ...o, adminNotes: savedNotes } : o)));
+      setSelectedOrder((prev) => (prev ? { ...prev, adminNotes: savedNotes } : prev));
       showFeedback("Internal admin note saved.");
       toast.success("Internal admin note saved.");
     } else {

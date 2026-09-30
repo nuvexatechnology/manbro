@@ -4,6 +4,8 @@ import { SiteAnnouncementSettings, DEFAULT_ANNOUNCEMENT_SETTINGS } from "@/types
 
 const SETTINGS_ROW_ID = "site_announcements";
 
+let inMemorySettings: SiteAnnouncementSettings = DEFAULT_ANNOUNCEMENT_SETTINGS;
+
 export async function getAnnouncementSettings(): Promise<SiteAnnouncementSettings> {
   try {
     const db = getDb();
@@ -14,11 +16,11 @@ export async function getAnnouncementSettings(): Promise<SiteAnnouncementSetting
       .maybeSingle();
 
     if (error || !data?.data) {
-      return DEFAULT_ANNOUNCEMENT_SETTINGS;
+      return inMemorySettings;
     }
     return { ...DEFAULT_ANNOUNCEMENT_SETTINGS, ...data.data };
   } catch {
-    return DEFAULT_ANNOUNCEMENT_SETTINGS;
+    return inMemorySettings;
   }
 }
 
@@ -32,6 +34,8 @@ export async function saveAnnouncementSettings(
     updatedAt: new Date().toISOString(),
   };
 
+  inMemorySettings = updated;
+
   try {
     const db = getDb();
     const { error } = await db.from("manbro_settings").upsert({
@@ -41,10 +45,10 @@ export async function saveAnnouncementSettings(
     });
 
     if (error) {
-      console.error("Failed to persist settings in DB:", error);
+      console.warn("manbro_settings table note:", error.message || error);
     }
   } catch (e) {
-    console.error("Settings DB upsert error:", e);
+    console.warn("Settings DB upsert catch:", e);
   }
 
   return updated;

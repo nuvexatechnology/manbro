@@ -15,8 +15,8 @@ const product = { id: "test-product", name: "Test shirt", slug: "test-shirt", ca
 const line = { productId: product.id, size: "M", color: "Black", quantity: 1 };
 
 test("shipping boundary and runtime validation reject malformed checkout data", () => {
-  assert.deepEqual(calculateTotals(150), { subtotal: 150, discount: 0, shipping: 0, tax: 12, total: 162 });
-  assert.equal(calculateTotals(149).shipping, 15);
+  assert.deepEqual(calculateTotals(1000), { subtotal: 1000, discount: 0, shipping: 0, tax: 50, total: 1050 });
+  assert.equal(calculateTotals(500).shipping, 70);
   assert.equal(checkoutInput.safeParse(address).success, true);
   for (const phone of ["", "abc", "1234"]) assert.equal(checkoutInput.safeParse({ ...address, phone }).success, false);
   for (const quantity of [-1, 0, 0.5, Infinity, 101, "1"]) assert.equal(cartInput.safeParse([{ product: { id: product.id }, selectedSize: "M", selectedColor: { name: "Black" }, quantity }]).success, false);

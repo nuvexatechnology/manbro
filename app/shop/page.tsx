@@ -67,13 +67,15 @@ function ShopCatalog({ initialCategory, initialSearch }: { initialCategory: Prod
     });
   };
 
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-[#091D12] text-white py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen bg-[#091D12] text-white py-6 sm:py-12">
+      <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
       {/* Page Title & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#284234] pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#284234] pb-5 sm:pb-6">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
             Store Catalog
           </h1>
           <p className="text-xs text-neutral-300 mt-1">
@@ -81,8 +83,23 @@ function ShopCatalog({ initialCategory, initialSearch }: { initialCategory: Prod
           </p>
         </div>
 
-        {/* Top Controls: Search Input & Sort Dropdown */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+        {/* Top Controls: Search Input, Mobile Filter Button & Sort Dropdown */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+          {/* Mobile Filter Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+            className="lg:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-[#11301F] border border-[#284234] text-[#d4af37] font-bold text-xs uppercase rounded-xl hover:border-[#d4af37] transition"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span>{isMobileFiltersOpen ? "Hide Filters" : "Filter & Refine"}</span>
+            {(filters.category !== "All" || filters.selectedSizes.length > 0 || filters.maxPrice < 5000) && (
+              <span className="w-2 h-2 rounded-full bg-[#d4af37]" />
+            )}
+          </button>
+
           {/* Search Input */}
           <div className="relative w-full sm:w-64">
             <input
@@ -120,9 +137,9 @@ function ShopCatalog({ initialCategory, initialSearch }: { initialCategory: Prod
       </div>
 
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-        {/* Sidebar Filters */}
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 items-start">
+        {/* Sidebar Filters - Desktop sticky & Mobile dropdown */}
+        <div className={`lg:col-span-1 ${isMobileFiltersOpen ? "block" : "hidden lg:block"}`}>
           <ProductFilters
             filters={filters}
             categories={categories.map((c) => c.name)}
@@ -134,7 +151,7 @@ function ShopCatalog({ initialCategory, initialSearch }: { initialCategory: Prod
         {/* Products Grid */}
         <div className="lg:col-span-3">
           {error ? (
-            <div role="alert" className="bg-[#11301F] border border-[#284234] rounded-2xl p-12 text-center space-y-4">
+            <div role="alert" className="bg-[#11301F] border border-[#284234] rounded-2xl p-8 sm:p-12 text-center space-y-4">
               <p className="text-sm text-neutral-300">{error}</p>
               <button
                 type="button"
@@ -145,13 +162,13 @@ function ShopCatalog({ initialCategory, initialSearch }: { initialCategory: Prod
               </button>
             </div>
           ) : isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse">
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div key={n} className="h-80 bg-[#11301F] rounded-xl" />
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6 animate-pulse">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <div key={n} className="h-72 sm:h-80 bg-[#11301F] rounded-xl" />
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="bg-[#11301F] border border-[#284234] rounded-2xl p-12 text-center space-y-4">
+            <div className="bg-[#11301F] border border-[#284234] rounded-2xl p-8 sm:p-12 text-center space-y-4">
               <div className="w-12 h-12 rounded-full bg-[#091D12] border border-[#284234] mx-auto flex items-center justify-center text-[#d4af37]">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
@@ -169,7 +186,7 @@ function ShopCatalog({ initialCategory, initialSearch }: { initialCategory: Prod
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6">
               {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

@@ -11,6 +11,7 @@ import { adminFetch } from "@/lib/auth/client";
 import SalesReportSection from "@/components/admin/SalesReportSection";
 import { generateOrderInvoicePdf } from "@/lib/generateInvoicePdf";
 import { SiteAnnouncementSettings, DEFAULT_ANNOUNCEMENT_SETTINGS } from "@/types/settings";
+import { toast } from "@/components/ui/toast";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -119,7 +120,7 @@ export default function AdminDashboard() {
       setIsAuthenticated(false);
       router.replace("/admin/login");
     } catch {
-      alert("Logout failed. Please try again.");
+      toast.error("Logout failed. Please try again.");
     }
   };
 
@@ -460,7 +461,7 @@ export default function AdminDashboard() {
                           try {
                             await generateOrderInvoicePdf(order);
                           } catch (err) {
-                            alert("Failed to generate PDF");
+                            toast.error("Failed to generate PDF");
                           }
                         }}
                         className="px-3 py-1.5 bg-[#d4af37] hover:bg-[#c29e2e] text-black font-extrabold text-xs rounded-lg transition cursor-pointer flex items-center gap-1 shadow"
@@ -811,12 +812,16 @@ export default function AdminDashboard() {
                   if (data.success) {
                     setAnnouncements(data.settings);
                     setAnnouncementsFeedback("Announcement settings updated successfully!");
+                    toast.success("Announcement settings updated successfully!");
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("manbro-announcements-updated"));
+                    }
                     setTimeout(() => setAnnouncementsFeedback(""), 3500);
                   } else {
-                    alert(data.error || "Failed to update announcements");
+                    toast.error(data.error || "Failed to update announcements");
                   }
                 } catch {
-                  alert("Error updating announcement settings");
+                  toast.error("Error updating announcement settings");
                 } finally {
                   setIsSavingAnnouncements(false);
                 }
@@ -837,7 +842,7 @@ export default function AdminDashboard() {
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Free Shipping Text */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-neutral-300 block">
@@ -856,16 +861,31 @@ export default function AdminDashboard() {
                 {/* Offer Text */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-neutral-300 block">
-                    Offer / Right Label
+                    Offer Description / Promo Text
                   </label>
                   <input
                     type="text"
                     value={announcements.offerText}
-                    onChange={(e) => setAnnouncements({ ...announcements, offerText: e.target.value, offerCode: "" })}
-                    placeholder="e.g. 10% OFF YOUR FIRST ORDER"
+                    onChange={(e) => setAnnouncements({ ...announcements, offerText: e.target.value })}
+                    placeholder="e.g. 10% OFF YOUR FIRST ORDER - USE CODE"
                     className="w-full bg-[#091D12] border border-[#284234] focus:border-[#d4af37] text-white text-xs px-4 py-2.5 rounded-xl outline-none"
                   />
-                  <p className="text-[11px] text-neutral-500">Secondary / offer announcement label in the top bar.</p>
+                  <p className="text-[11px] text-neutral-500">Announcement description label.</p>
+                </div>
+
+                {/* Offer Code */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-300 block">
+                    Promo Coupon Code (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={announcements.offerCode}
+                    onChange={(e) => setAnnouncements({ ...announcements, offerCode: e.target.value.toUpperCase() })}
+                    placeholder="e.g. MANBRO10"
+                    className="w-full bg-[#091D12] border border-[#284234] focus:border-[#d4af37] text-[#d4af37] font-bold text-xs px-4 py-2.5 rounded-xl outline-none uppercase"
+                  />
+                  <p className="text-[11px] text-neutral-500">Highlighted in gold badge in the top bar.</p>
                 </div>
               </div>
 
@@ -975,11 +995,11 @@ function ProductForm({ product, categories, onSubmit, onCancel }: any) {
       if (response.ok && data.success && data.url) {
         return data.url;
       } else {
-        alert(data.error || "Failed to upload image from device");
+        toast.error(data.error || "Failed to upload image from device");
         return null;
       }
     } catch {
-      alert("Network error uploading image from device");
+      toast.error("Network error uploading image from device");
       return null;
     }
   };

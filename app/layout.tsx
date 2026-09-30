@@ -7,6 +7,8 @@ import { Footer } from "@/components/layout/footer";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { AuthModal } from "@/components/auth/AuthModal";
 
+import { ToastContainer } from "@/components/ui/toast";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -46,6 +48,7 @@ export default function RootLayout({
             <CartDrawer />
             <AuthModal />
             <Footer />
+            <ToastContainer />
           </CartProvider>
         </UserAuthProvider>
       </body>

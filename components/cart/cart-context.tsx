@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CartItem, Product, ClothingSize, ColorOption } from "@/types/store";
 import { useUserAuth } from "@/components/auth/user-auth-context";
+import { toast } from "@/components/ui/toast";
 
 interface CartContextType {
   cart: CartItem[];
@@ -72,7 +73,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     if (!variant || variant.stock < quantity) {
       const availableStock = variant ? variant.stock : 0;
-      alert(`Only ${availableStock} items available in this size and color.`);
+      toast.warning(`Only ${availableStock} items available in this size and color.`);
       return;
     }
 
@@ -86,7 +87,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         // Check if total quantity would exceed stock
         if (variant.stock < newQuantity) {
-          alert(`Only ${variant.stock} items available in this size and color.`);
+          toast.warning(`Only ${variant.stock} items available in this size and color.`);
           return prevCart;
         }
 
@@ -131,7 +132,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       );
 
       if (!variant || variant.stock < newQuantity) {
-        alert(`Only ${variant?.stock ?? 0} items available in this size and color.`);
+        toast.warning(`Only ${variant?.stock ?? 0} items available in this size and color.`);
         return prev;
       }
 

@@ -151,9 +151,15 @@ function OrderDetailModal({ order, onClose }: { order: CustomerOrder; onClose: (
                 const price = variant?.price ?? item.product?.price ?? 0;
                 return (
                   <div key={item.id} className="flex items-center gap-3 bg-[#091D12] border border-[#284234] rounded-xl p-3">
-                    {item.product?.images?.[0] && (
+                    {item.product && (
                       <div className="relative w-14 h-16 rounded-lg bg-[#082816] overflow-hidden shrink-0 border border-[#284234]">
-                        <Image src={item.product.images[0]} alt={item.product.name} fill className="object-cover" sizes="56px" />
+                        <Image
+                          src={(item.selectedColor && item.product.colorImages?.[item.selectedColor.name]) || item.product.images?.[0] || "/images/products/tshirt-burgundy.jpg"}
+                          alt={item.product.name}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                        />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">

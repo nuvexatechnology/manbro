@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     const { freeShippingText, offerText, offerCode, isEnabled } = body;
 
     const saved = await saveAnnouncementSettings({
-      freeShippingText: typeof freeShippingText === "string" ? freeShippingText.trim() : undefined,
-      offerText: typeof offerText === "string" ? offerText.trim() : undefined,
-      offerCode: typeof offerCode === "string" ? offerCode.trim() : undefined,
+      freeShippingText: typeof freeShippingText === "string" ? freeShippingText.trim() : "",
+      offerText: typeof offerText === "string" ? offerText.trim() : "",
+      offerCode: typeof offerCode === "string" ? offerCode.trim() : "",
       isEnabled: typeof isEnabled === "boolean" ? isEnabled : true,
     });
 

@@ -1,4 +1,4 @@
-"use client";
+import { toast } from "@/components/ui/toast";
 
 export async function adminFetch(input: string, init?: RequestInit): Promise<Response> {
   const response = await fetch(input, { ...init, credentials: "same-origin", cache: "no-store" });
@@ -9,7 +9,7 @@ export async function adminFetch(input: string, init?: RequestInit): Promise<Res
   if (!response.ok) {
     const data = await response.json().catch(() => null);
     const message = data?.error || "The request failed. Please try again.";
-    window.alert(message);
+    toast.error(message);
     throw new Error(message);
   }
   return response;

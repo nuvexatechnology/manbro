@@ -91,7 +91,7 @@ export function CartDrawer() {
                   {/* Thumbnail */}
                   <div className="relative w-20 h-24 rounded-lg bg-[#082816] overflow-hidden shrink-0 border border-[#284234]">
                     <Image
-                      src={item.product.images[0]}
+                      src={(item.selectedColor && item.product.colorImages?.[item.selectedColor.name]) || item.product.images[0] || "/images/products/tshirt-burgundy.jpg"}
                       alt={item.product.name}
                       fill
                       className="object-cover"
@@ -178,7 +178,7 @@ export function CartDrawer() {
                   <span>{totals.shipping === 0 ? <strong className="text-[#d4af37]">FREE</strong> : formatCurrency(totals.shipping)}</span>
                 </div>
                 <div className="flex justify-between text-neutral-300">
-                  <span>Estimated Tax</span>
+                  <span>GST (5%)</span>
                   <span>{formatCurrency(totals.tax)}</span>
                 </div>
               </div>

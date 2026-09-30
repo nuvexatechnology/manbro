@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 import { calculateTotals } from "@/lib/pricing";
 import CashfreePaymentModal from "@/components/checkout/CashfreePaymentModal";
 import { generateOrderInvoicePdf } from "@/lib/generateInvoicePdf";
+import { toast } from "@/components/ui/toast";
 
 export default function CheckoutPage() {
   const { cart, subtotal, clearCart } = useCart();
@@ -220,7 +221,7 @@ export default function CheckoutPage() {
                 await generateOrderInvoicePdf(completedOrder);
               } catch (err) {
                 console.error("PDF download error:", err);
-                alert("Could not generate invoice PDF. Please try again.");
+                toast.error("Could not generate invoice PDF. Please try again.");
               } finally {
                 setIsDownloadingPdf(false);
               }
@@ -275,15 +276,15 @@ export default function CheckoutPage() {
       {/* Cashfree Official SDK Script */}
       <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="lazyOnload" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Page Header */}
-        <div className="mb-8 space-y-2">
+        <div className="mb-6 sm:mb-8 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-black tracking-widest text-[#d4af37] bg-[#11301F] border border-[#284234] px-3.5 py-1 rounded-full">
+            <span className="text-[10px] sm:text-xs uppercase font-black tracking-widest text-[#d4af37] bg-[#11301F] border border-[#284234] px-3 py-1 rounded-full">
               Cashfree Secure Gateway
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+          <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight uppercase">
             Checkout & Shipping
           </h1>
           <p className="text-xs text-neutral-400">
@@ -291,20 +292,20 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-        <form onSubmit={handleProceedToPayment} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <form onSubmit={handleProceedToPayment} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
           {/* Left Column: Delivery Address Form */}
           <fieldset disabled={isSubmitting} className="lg:col-span-7 space-y-6 min-w-0">
-            <div className="bg-[#11301F]/80 border border-[#284234] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-              <div className="flex items-center justify-between pb-4 border-b border-[#284234]">
+            <div className="bg-[#11301F]/80 border border-[#284234] rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-xl">
+              <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#284234]">
                 <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black font-black text-xs flex items-center justify-center">
+                  <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#d4af37] text-black font-black text-[11px] sm:text-xs flex items-center justify-center">
                     1
                   </span>
-                  <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
+                  <h2 className="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
                     Shipping & Delivery Address
                   </h2>
                 </div>
-                <span className="text-[10px] text-neutral-400 uppercase font-semibold">
+                <span className="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-semibold">
                   * All fields required
                 </span>
               </div>
@@ -526,7 +527,12 @@ export default function CheckoutPage() {
               {cart.map((item) => (
                 <div key={item.id} className="pt-4 flex gap-3 items-center">
                   <div className="relative w-14 h-16 rounded-xl bg-[#091D12] overflow-hidden shrink-0 border border-[#284234]">
-                    <Image src={item.product.images[0]} alt={item.product.name} fill className="object-cover" />
+                    <Image
+                      src={(item.selectedColor && item.product.colorImages?.[item.selectedColor.name]) || item.product.images[0] || "/images/products/tshirt-burgundy.jpg"}
+                      alt={item.product.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                   <div className="flex-1 text-xs space-y-0.5">
                     <h4 title={item.product.name} className="font-bold text-white line-clamp-1">
@@ -561,7 +567,7 @@ export default function CheckoutPage() {
                 <span>{totals.shipping === 0 ? <strong className="text-[#d4af37]">FREE</strong> : formatCurrency(totals.shipping)}</span>
               </div>
               <div className="flex justify-between text-neutral-300">
-                <span>Estimated Tax (8%)</span>
+                <span>GST (5%)</span>
                 <span className="text-white font-medium">{formatCurrency(totals.tax)}</span>
               </div>
               <div className="pt-3 border-t border-[#284234] flex justify-between text-base font-black text-white">

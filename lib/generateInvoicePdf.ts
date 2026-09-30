@@ -187,6 +187,12 @@ export async function generateOrderInvoicePdf(order: Order, download: boolean = 
   curY += 6;
   const totalsBoxX = pageWidth - 90;
 
+  // Compute exact amounts with 5% GST
+  const subtotal = order.subtotal || order.items.reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0);
+  const shipping = order.shipping !== undefined ? order.shipping : (subtotal >= 999 ? 0 : 70);
+  const gst = order.tax !== undefined && order.tax > 0 ? order.tax : Math.round(subtotal * 0.05 * 100) / 100;
+  const total = order.total || Math.round((subtotal + shipping + gst) * 100) / 100;
+
   doc.setFillColor(248, 250, 248);
   doc.setDrawColor(218, 226, 220);
   doc.roundedRect(totalsBoxX, curY, 76, 40, 2, 2, "FD");
@@ -196,13 +202,13 @@ export async function generateOrderInvoicePdf(order: Order, download: boolean = 
   doc.setTextColor(80, 90, 85);
 
   doc.text("Subtotal:", totalsBoxX + 6, curY + 7);
-  doc.text(`INR ${order.subtotal.toFixed(2)}`, pageWidth - 18, curY + 7, { align: "right" });
+  doc.text(`INR ${subtotal.toFixed(2)}`, pageWidth - 18, curY + 7, { align: "right" });
 
   doc.text("Delivery / Shipping:", totalsBoxX + 6, curY + 14);
-  doc.text(order.shipping === 0 ? "FREE" : `INR ${order.shipping.toFixed(2)}`, pageWidth - 18, curY + 14, { align: "right" });
+  doc.text(shipping === 0 ? "FREE" : `INR ${shipping.toFixed(2)}`, pageWidth - 18, curY + 14, { align: "right" });
 
-  doc.text("Taxes (GST 8%):", totalsBoxX + 6, curY + 21);
-  doc.text(`INR ${order.tax.toFixed(2)}`, pageWidth - 18, curY + 21, { align: "right" });
+  doc.text("GST (5%):", totalsBoxX + 6, curY + 21);
+  doc.text(`INR ${gst.toFixed(2)}`, pageWidth - 18, curY + 21, { align: "right" });
 
   // Total Row in Box
   doc.setFillColor(9, 29, 18);
@@ -212,7 +218,7 @@ export async function generateOrderInvoicePdf(order: Order, download: boolean = 
   doc.setFontSize(10);
   doc.setTextColor(212, 175, 55);
   doc.text("Total Paid:", totalsBoxX + 6, curY + 33.5);
-  doc.text(`INR ${order.total.toFixed(2)}`, pageWidth - 20, curY + 33.5, { align: "right" });
+  doc.text(`INR ${total.toFixed(2)}`, pageWidth - 20, curY + 33.5, { align: "right" });
 
   // Payment Status on Left of Totals Box
   const statusBoxX = 14;

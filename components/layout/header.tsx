@@ -23,16 +23,27 @@ export function Header() {
   // Load announcement settings
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/settings/announcements", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted && data?.success && data.settings) {
-          setAnnouncements(data.settings);
-        }
-      })
-      .catch(() => {});
+    const fetchAnnouncements = () => {
+      fetch("/api/settings/announcements", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (isMounted && data?.success && data.settings) {
+            setAnnouncements(data.settings);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchAnnouncements();
+
+    const handleUpdate = () => fetchAnnouncements();
+    window.addEventListener("manbro-announcements-updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
     return () => {
       isMounted = false;
+      window.removeEventListener("manbro-announcements-updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
     };
   }, []);
 
@@ -61,7 +72,7 @@ export function Header() {
       {/* Top Announcement Bar */}
       {announcements.isEnabled && (
         <div className="bg-[#091D12] border-b border-[#284234] py-2 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto flex items-center justify-between text-xs tracking-wide">
+          <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto flex items-center justify-between text-xs tracking-wide">
             {/* Left Info Items */}
             <div className="flex items-center gap-6 sm:gap-8">
               {/* Free Shipping */}
@@ -147,16 +158,16 @@ export function Header() {
       )}
 
       {/* Main Navigation Bar */}
-      <div className="bg-[#091D12] py-4 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="bg-[#091D12] py-3.5 sm:py-4 px-3 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Brand Logo */}
-          <Link href="/" className="inline-flex items-center group">
-            <div className="relative h-8 sm:h-9 w-[205px] sm:w-[230px] shrink-0 transition-transform duration-200 group-hover:scale-105">
+          <Link href="/" className="inline-flex items-center group shrink-0">
+            <div className="relative h-7 sm:h-9 w-[160px] xs:w-[185px] sm:w-[230px] transition-transform duration-200 group-hover:scale-105">
               <Image
                 src="/images/logo-full.png"
                 alt="MANBRO"
                 fill
-                sizes="230px"
+                sizes="(max-width: 640px) 185px, 230px"
                 className="object-contain"
                 priority
               />

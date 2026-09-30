@@ -36,8 +36,15 @@ export const PRODUCTS: Product[] = [
       { id: "var-1-12", size: "L", color: { name: "Gray", hex: "#808080" }, stock: 10 },
     ],
     images: [
-      "/images/products/linen-shirt.jpg"
+      "/images/products/linen-shirt.jpg",
+      "/images/products/tshirt-blackgold.jpg",
+      "/images/products/tshirt-greywash.jpg"
     ],
+    colorImages: {
+      "White": "/images/products/linen-shirt.jpg",
+      "Black": "/images/products/tshirt-blackgold.jpg",
+      "Gray": "/images/products/tshirt-greywash.jpg"
+    },
     rating: 4.8,
     reviewCount: 124,
     isFeatured: true,
@@ -119,8 +126,13 @@ export const PRODUCTS: Product[] = [
       { id: "var-3-8", size: "XL", color: { name: "Navy", hex: "#000080" }, stock: 8 },
     ],
     images: [
-      "/images/products/linen-shirt.jpg"
+      "/images/products/tshirt-blackgold.jpg",
+      "/images/products/tshirt-burgundy.jpg"
     ],
+    colorImages: {
+      "Black": "/images/products/tshirt-blackgold.jpg",
+      "Navy": "/images/products/tshirt-burgundy.jpg"
+    },
     rating: 4.7,
     reviewCount: 67,
     isFeatured: true,
@@ -204,8 +216,15 @@ export const PRODUCTS: Product[] = [
       { id: "var-5-10", size: "L", color: { name: "Rust", hex: "#8B4513" }, stock: 8 },
     ],
     images: [
-      "/images/products/linen-shirt.jpg"
+      "/images/products/tshirt-yellowsun.jpg",
+      "/images/products/tshirt-darkgreen.jpg",
+      "/images/products/tshirt-burgundy.jpg"
     ],
+    colorImages: {
+      "Vintage White": "/images/products/tshirt-yellowsun.jpg",
+      "Indigo": "/images/products/tshirt-darkgreen.jpg",
+      "Rust": "/images/products/tshirt-burgundy.jpg"
+    },
     rating: 4.8,
     reviewCount: 89,
     isFeatured: false,
@@ -293,12 +312,14 @@ export const PRODUCTS: Product[] = [
       { id: "var-7-13", size: "XL", color: { name: "Charcoal", hex: "#36454F" }, stock: 10 },
     ],
     images: [
-      "/images/products/linen-shirt.jpg"
+      "/images/products/tshirt-blackgold.jpg",
+      "/images/products/linen-shirt.jpg",
+      "/images/products/tshirt-greywash.jpg"
     ],
     colorImages: {
-      "Black": "/images/products/blazer.jpg",
+      "Black": "/images/products/tshirt-blackgold.jpg",
       "White": "/images/products/linen-shirt.jpg",
-      "Charcoal": "/images/products/hoodie.jpg"
+      "Charcoal": "/images/products/tshirt-greywash.jpg"
     },
     rating: 4.9,
     reviewCount: 34,

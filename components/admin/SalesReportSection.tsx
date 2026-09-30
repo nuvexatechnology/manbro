@@ -5,6 +5,7 @@ import { Order, OrderStatus } from "@/types/store";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { exportSalesReportToExcel } from "@/lib/exportExcel";
 import { generateOrderInvoicePdf } from "@/lib/generateInvoicePdf";
+import { toast } from "@/components/ui/toast";
 
 interface SalesReportSectionProps {
   orders: Order[];
@@ -562,7 +563,7 @@ export default function SalesReportSection({ orders }: SalesReportSectionProps) 
                           try {
                             await generateOrderInvoicePdf(order);
                           } catch (err) {
-                            alert("Failed to generate PDF");
+                            toast.error("Failed to generate PDF");
                           }
                         }}
                         className="px-2.5 py-1 bg-[#d4af37] hover:bg-[#c29e2e] text-black font-extrabold text-[10px] uppercase rounded-lg transition cursor-pointer shadow inline-flex items-center gap-1"

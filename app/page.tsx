@@ -50,15 +50,15 @@ export default async function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full bg-[#091D12] overflow-hidden border-b border-[#284234]">
         {/* Desktop & Tablet (md and above): Exact 2100x749 Widescreen Banner with Hotspot */}
-        <div className="hidden md:block w-full max-w-[1920px] mx-auto relative">
+        <div className="hidden md:block w-full max-w-[1920px] mx-auto relative bg-[#091D12]">
           <div className="relative w-full aspect-[2100/749] select-none">
             <Image
               src="/images/hero-banner.png"
               alt="MANBRO - BUILD DIFFERENT. MADE TO STAND OUT. Premium streetwear for those who set their own rules."
               fill
               priority
-              className="w-full h-full object-cover sm:object-contain object-center"
-              sizes="100vw"
+              className="w-full h-full object-cover object-center"
+              sizes="(min-width: 1920px) 1920px, 100vw"
             />
             {/* Interactive Clickable Hotspot over the exact 'SHOP NOW ->' button */}
             <Link
@@ -138,60 +138,60 @@ export default async function HomePage() {
 
       {/* Features Bar */}
       <section className="bg-[#091D12] border-b border-[#284234]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 items-center">
+        <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 items-center">
             {/* Free Shipping */}
-            <div className="flex items-center gap-3.5">
-              <svg className="w-8 h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <rect x="1" y="5" width="15" height="11" rx="1" />
                 <path d="M16 8h4l3 4v4h-7V8z" />
                 <circle cx="5.5" cy="18.5" r="2.5" />
                 <circle cx="18.5" cy="18.5" r="2.5" />
               </svg>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
+                <h4 className="text-[11px] sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
                   FREE SHIPPING
                 </h4>
-                <p className="text-xs text-neutral-300">On orders over ₹999</p>
+                <p className="text-[10px] sm:text-xs text-neutral-300">On orders over ₹999</p>
               </div>
             </div>
 
             {/* Easy Returns */}
-            <div className="flex items-center gap-3.5">
-              <svg className="w-8 h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
+                <h4 className="text-[11px] sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
                   EASY RETURNS
                 </h4>
-                <p className="text-xs text-neutral-300">7-day returns</p>
+                <p className="text-[10px] sm:text-xs text-neutral-300">7-day returns</p>
               </div>
             </div>
 
             {/* Secure Payment */}
-            <div className="flex items-center gap-3.5">
-              <svg className="w-8 h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
+                <h4 className="text-[11px] sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
                   SECURE PAYMENT
                 </h4>
-                <p className="text-xs text-neutral-300">100% secure checkout</p>
+                <p className="text-[10px] sm:text-xs text-neutral-300">100% secure checkout</p>
               </div>
             </div>
 
             {/* Customer Support */}
-            <div className="flex items-center gap-3.5">
-              <svg className="w-8 h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[#d4af37] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z" />
               </svg>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
+                <h4 className="text-[11px] sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider">
                   CUSTOMER SUPPORT
                 </h4>
-                <p className="text-xs text-neutral-300">24/7 support</p>
+                <p className="text-[10px] sm:text-xs text-neutral-300">24/7 support</p>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default async function HomePage() {
 
       {/* Dynamic Category Sections */}
       {dynamicSections.length === 0 ? (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <section className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <p className="text-sm text-neutral-400">No products available in the catalog yet.</p>
           <Link
             href="/shop"
@@ -213,28 +213,28 @@ export default async function HomePage() {
         dynamicSections.map((sec, idx) => (
           <section
             key={sec.name}
-            className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 ${
+            className={`max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-16 ${
               idx > 0 ? "border-t border-[#284234]" : ""
             }`}
           >
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-5 sm:mb-8">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wider">
+                <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-wider">
                   {sec.name}
                 </h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
+                <p className="text-[11px] sm:text-xs text-neutral-400 mt-0.5">
                   {sec.products.length} item{sec.products.length === 1 ? "" : "s"} available
                 </p>
               </div>
               <Link
                 href={`/shop?category=${sec.slug}`}
-                className="text-xs sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider hover:text-[#c29e2e] transition underline underline-offset-4 flex items-center gap-1.5 group"
+                className="text-[11px] sm:text-sm font-bold text-[#d4af37] uppercase tracking-wider hover:text-[#c29e2e] transition underline underline-offset-4 flex items-center gap-1 group"
               >
                 VIEW ALL
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </Link>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 lg:gap-8">
               {sec.products.slice(0, 10).map((product) => (
                 <HomeProductCard key={product.id} product={product as any} />
               ))}

@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import { sendContactEmailAction } from "@/actions/contact";
+import { toast } from "@/components/ui/toast";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -11,10 +14,26 @@ export default function ContactPage() {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name && formData.email && formData.message) {
-      setSubmitted(true);
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.warning("Please fill in all required fields.");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const res = await sendContactEmailAction(formData);
+      if (res.success) {
+        setSubmitted(true);
+        toast.success(res.message || "Your inquiry has been delivered!");
+      } else {
+        toast.error(res.error || "Failed to send message. Please try again.");
+      }
+    } catch {
+      toast.error("Network error while submitting your inquiry.");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -43,7 +62,7 @@ export default function ContactPage() {
             <div>
               <h2 className="text-2xl font-bold text-white mb-3">Customer Support</h2>
               <p className="text-emerald-100/70 text-sm leading-relaxed">
-                We take pride in our prompt response. Inquiries are generally addressed within 12 business hours.
+                We take pride in our prompt response. Inquiries are routed directly to our specialist team at <strong className="text-[#d4af37]">abhinavkp1907@gmail.com</strong>.
               </p>
             </div>
 
@@ -55,9 +74,9 @@ export default function ContactPage() {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-xs text-emerald-100/60 uppercase font-bold tracking-wider">Email Concierge</div>
-                  <a href="mailto:support@manbro.com" className="text-white hover:text-[#d4af37] transition font-medium text-sm">
-                    support@manbro.com
+                  <div className="text-xs text-emerald-100/60 uppercase font-bold tracking-wider">Direct Email</div>
+                  <a href="mailto:abhinavkp1907@gmail.com" className="text-white hover:text-[#d4af37] transition font-medium text-sm">
+                    abhinavkp1907@gmail.com
                   </a>
                 </div>
               </div>
@@ -101,23 +120,27 @@ export default function ContactPage() {
           {/* Direct Message Form */}
           <div className="lg:col-span-7 bg-[#11301F]/80 border border-[#284234] rounded-2xl p-6 sm:p-10">
             {submitted ? (
-              <div className="py-12 text-center">
-                <svg className="w-16 h-16 text-[#d4af37] mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="text-2xl font-bold text-white mb-2">Message Sent</h3>
-                <p className="text-emerald-100/80 text-sm max-w-md mx-auto mb-6">
-                  Thank you for contacting MANBRO. A concierge specialist has received your inquiry and will follow up shortly.
+              <div className="py-12 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-[#d4af37] border border-emerald-500/40 flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white">Inquiry Delivered</h3>
+                <p className="text-emerald-100/80 text-sm max-w-md mx-auto">
+                  Thank you for contacting MANBRO. Your message has been sent to our concierge team at <strong className="text-[#d4af37]">abhinavkp1907@gmail.com</strong>. We will follow up shortly.
                 </p>
-                <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setFormData({ name: "", email: "", subject: "", message: "" });
-                  }}
-                  className="px-6 py-2.5 bg-[#d4af37] text-[#091D12] font-bold text-xs uppercase tracking-wider rounded-md hover:bg-[#c49f2e] transition cursor-pointer"
-                >
-                  Send Another Message
-                </button>
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      setSubmitted(false);
+                      setFormData({ name: "", email: "", subject: "", message: "" });
+                    }}
+                    className="px-6 py-2.5 bg-[#d4af37] text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-[#c29e2e] transition cursor-pointer"
+                  >
+                    Send Another Message
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -180,12 +203,26 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#d4af37] text-[#091D12] font-black text-xs uppercase tracking-widest rounded-lg hover:bg-[#c49f2e] transition shadow-lg shadow-[#d4af37]/20 cursor-pointer"
+                  disabled={isSending}
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition shadow-lg shadow-[#d4af37]/20 ${
+                    isSending
+                      ? "bg-[#284234] text-neutral-400 cursor-not-allowed"
+                      : "bg-[#d4af37] text-black hover:bg-[#c29e2e] cursor-pointer"
+                  }`}
                 >
-                  <span>Submit Inquiry</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
+                  {isSending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      <span>Sending Email...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Submit Inquiry</span>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </form>
             )}

@@ -38,11 +38,13 @@ export function Header() {
 
     const handleUpdate = () => fetchAnnouncements();
     window.addEventListener("manbro-announcements-updated", handleUpdate);
+    window.addEventListener("manbro-shipping-updated", handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
     return () => {
       isMounted = false;
       window.removeEventListener("manbro-announcements-updated", handleUpdate);
+      window.removeEventListener("manbro-shipping-updated", handleUpdate);
       window.removeEventListener("storage", handleUpdate);
     };
   }, []);
@@ -58,7 +60,7 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   const navLinks = [
     { label: "HOME", href: "/" },
@@ -92,8 +94,7 @@ export function Header() {
               )}
 
               {/* Discount Code */}
-              {(announcements.offerText || announcements.offerCode) && (
-                <div className="hidden md:flex items-center gap-2">
+              {(announcements.offerText || announcements.offerCode) && (\n                <div className="hidden md:flex items-center gap-2">
                   <svg
                     className="w-4 h-4 text-[#d4af37] shrink-0"
                     fill="currentColor"
@@ -138,15 +139,17 @@ export function Header() {
               ) : (
                 <div className="flex items-center gap-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
                   <button
-                    onClick={openLoginModal}
-                    className="text-white hover:text-[#d4af37] transition"
+                    type="button"
+                    onClick={() => openLoginModal()}
+                    className="text-white hover:text-[#d4af37] transition cursor-pointer"
                   >
                     SIGN IN
                   </button>
                   <span className="text-neutral-500">/</span>
                   <button
-                    onClick={openRegisterModal}
-                    className="text-[#d4af37] hover:underline transition"
+                    type="button"
+                    onClick={() => openRegisterModal()}
+                    className="text-[#d4af37] hover:underline transition cursor-pointer"
                   >
                     REGISTER
                   </button>
@@ -250,6 +253,7 @@ export function Header() {
             {/* User Account Button & Dropdown */}
             <div className="relative" ref={userMenuRef}>
               <button
+                type="button"
                 onClick={() => {
                   if (user) {
                     setIsUserMenuOpen((prev) => !prev);
@@ -257,7 +261,7 @@ export function Header() {
                     openLoginModal();
                   }
                 }}
-                className={`p-1 transition focus:outline-none flex items-center gap-1.5 ${
+                className={`p-1 transition focus:outline-none flex items-center gap-1.5 cursor-pointer ${
                   user ? "text-[#d4af37]" : "text-white hover:text-[#d4af37]"
                 }`}
                 aria-label="User Account"
@@ -405,20 +409,22 @@ export function Header() {
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <button
+                  type="button"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     openLoginModal();
                   }}
-                  className="py-2 px-3 bg-[#11301F] border border-[#284234] rounded-lg text-xs font-bold text-white text-center hover:border-[#d4af37]"
+                  className="py-2 px-3 bg-[#11301F] border border-[#284234] rounded-lg text-xs font-bold text-white text-center hover:border-[#d4af37] cursor-pointer"
                 >
                   Sign In
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     openRegisterModal();
                   }}
-                  className="py-2 px-3 bg-[#d4af37] text-black rounded-lg text-xs font-black text-center hover:bg-[#c29e2e]"
+                  className="py-2 px-3 bg-[#d4af37] text-black rounded-lg text-xs font-black text-center hover:bg-[#c29e2e] cursor-pointer"
                 >
                   Register
                 </button>

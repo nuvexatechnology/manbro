@@ -10,7 +10,7 @@ export function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

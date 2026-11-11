@@ -10,12 +10,12 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { adminFetch } from "@/lib/auth/client";
 import SalesReportSection from "@/components/admin/SalesReportSection";
 import { generateOrderInvoicePdf } from "@/lib/generateInvoicePdf";
-import { SiteAnnouncementSettings, DEFAULT_ANNOUNCEMENT_SETTINGS } from "@/types/settings";
+import { SiteAnnouncementSettings, DEFAULT_ANNOUNCEMENT_SETTINGS, ShippingSettings, DEFAULT_SHIPPING_SETTINGS } from "@/types/settings";
 import { toast } from "@/components/ui/toast";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"overview" | "reports" | "orders" | "products" | "categories" | "users" | "announcements">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "reports" | "orders" | "products" | "categories" | "users" | "shipping" | "announcements">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -24,6 +24,10 @@ export default function AdminDashboard() {
   const [announcements, setAnnouncements] = useState<SiteAnnouncementSettings>(DEFAULT_ANNOUNCEMENT_SETTINGS);
   const [isSavingAnnouncements, setIsSavingAnnouncements] = useState(false);
   const [announcementsFeedback, setAnnouncementsFeedback] = useState("");
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS);
+  const [isSavingShipping, setIsSavingShipping] = useState(false);
+  const [shippingFeedback, setShippingFeedback] = useState("");
+  const [syncAnnouncementWithShipping, setSyncAnnouncementWithShipping] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
@@ -79,6 +83,17 @@ export default function AdminDashboard() {
         }
       } catch (e) {
         console.error("Announcements fetch error:", e);
+      }
+
+      // Load shipping settings
+      try {
+        const shippingRes = await adminFetch("/api/admin/settings/shipping");
+        const shippingData = await shippingRes.json();
+        if (shippingData.success && shippingData.settings) {
+          setShippingSettings(shippingData.settings);
+        }
+      } catch (e) {
+        console.error("Shipping settings fetch error:", e);
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -302,6 +317,7 @@ export default function AdminDashboard() {
             { id: "products", label: `👕 Products (${products.length})` },
             { id: "categories", label: `🏷️ Categories (${categories.length})` },
             { id: "users", label: `👥 Registered Users (${users.length})` },
+            { id: "shipping", label: "🚚 Delivery & Shipping" },
             { id: "announcements", label: "📢 Header Banner" },
           ].map((tab) => (
             <button
@@ -903,6 +919,211 @@ export default function AdminDashboard() {
                   className="px-6 py-2.5 bg-[#d4af37] hover:bg-[#c29e2e] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer shadow-lg shadow-[#d4af37]/20"
                 >
                   {isSavingAnnouncements ? "Saving..." : "Save Announcement Settings"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Delivery & Shipping Settings Tab */}
+        {activeTab === "shipping" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-white tracking-tight uppercase">Delivery & Shipping Settings</h2>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Configure delivery charges, free delivery thresholds, and shipping timelines applied to customer shopping bags and checkout.
+                </p>
+              </div>
+              <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${
+                shippingSettings.isFreeShippingEnabled
+                  ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/50"
+                  : "bg-amber-950/80 text-amber-400 border-amber-800/50"
+              }`}>
+                {shippingSettings.isFreeShippingEnabled ? "Free Delivery Active" : "Flat Rate Only"}
+              </span>
+            </div>
+
+            {shippingFeedback && (
+              <div className="p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-300 text-xs font-bold">
+                ✓ {shippingFeedback}
+              </div>
+            )}
+
+            {/* Live Calculation Preview */}
+            <div className="bg-[#11301F] border border-[#284234] rounded-2xl p-6 space-y-4">
+              <label className="text-xs font-bold text-neutral-300 block">Live Storefront Delivery Preview</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-[#091D12] border border-[#284234] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">Order Below {formatCurrency(shippingSettings.freeShippingThreshold)}</span>
+                    <span className="text-red-400 font-bold">Standard Delivery</span>
+                  </div>
+                  <div className="text-lg font-black text-white">
+                    Delivery Fee: <span className="text-[#d4af37]">{formatCurrency(shippingSettings.standardShippingFee)}</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    Example: Order of ₹350 will pay {formatCurrency(shippingSettings.standardShippingFee)} shipping.
+                  </p>
+                </div>
+
+                <div className="bg-[#091D12] border border-[#284234] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">Order {formatCurrency(shippingSettings.freeShippingThreshold)} or Above</span>
+                    <span className="text-emerald-400 font-bold">Qualified</span>
+                  </div>
+                  <div className="text-lg font-black text-[#d4af37]">
+                    Delivery Fee: {shippingSettings.isFreeShippingEnabled ? "FREE (₹0.00)" : formatCurrency(shippingSettings.standardShippingFee)}
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    {shippingSettings.isFreeShippingEnabled
+                      ? `Customers get 100% Free Shipping on orders ₹${shippingSettings.freeShippingThreshold}+`
+                      : "Free shipping threshold is currently disabled."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Settings Form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSavingShipping(true);
+                try {
+                  const res = await adminFetch("/api/admin/settings/shipping", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      ...shippingSettings,
+                      syncAnnouncement: syncAnnouncementWithShipping,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setShippingSettings(data.settings);
+                    setShippingFeedback("Shipping & delivery settings saved successfully!");
+                    toast.success("Shipping settings saved successfully!");
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("manbro-shipping-updated"));
+                      if (syncAnnouncementWithShipping) {
+                        window.dispatchEvent(new CustomEvent("manbro-announcements-updated"));
+                      }
+                    }
+                    setTimeout(() => setShippingFeedback(""), 3500);
+                  } else {
+                    toast.error(data.error || "Failed to update shipping settings");
+                  }
+                } catch {
+                  toast.error("Error saving shipping settings");
+                } finally {
+                  setIsSavingShipping(false);
+                }
+              }}
+              className="bg-[#11301F] border border-[#284234] rounded-2xl p-6 sm:p-8 space-y-6"
+            >
+              {/* Free Shipping Enable Toggle */}
+              <div className="flex items-center gap-3 p-4 bg-[#091D12] border border-[#284234] rounded-xl">
+                <input
+                  type="checkbox"
+                  id="enableFreeShipping"
+                  checked={shippingSettings.isFreeShippingEnabled}
+                  onChange={(e) => setShippingSettings({ ...shippingSettings, isFreeShippingEnabled: e.target.checked })}
+                  className="w-4 h-4 accent-[#d4af37] cursor-pointer"
+                />
+                <div>
+                  <label htmlFor="enableFreeShipping" className="text-xs font-bold text-white cursor-pointer select-none block">
+                    Enable Free Shipping Threshold
+                  </label>
+                  <span className="text-[11px] text-neutral-400">
+                    When enabled, orders reaching the threshold below receive free shipping.
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Free Shipping Threshold */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-300 block">
+                    Free Delivery Threshold (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={shippingSettings.freeShippingThreshold}
+                    onChange={(e) => setShippingSettings({ ...shippingSettings, freeShippingThreshold: Number(e.target.value) })}
+                    placeholder="499"
+                    className="w-full bg-[#091D12] border border-[#284234] focus:border-[#d4af37] text-white text-xs px-4 py-2.5 rounded-xl outline-none font-bold"
+                  />
+                  <p className="text-[11px] text-neutral-500">Orders at or above this value unlock free shipping.</p>
+                </div>
+
+                {/* Standard Shipping Fee */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-300 block">
+                    Standard Delivery Fee (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={shippingSettings.standardShippingFee}
+                    onChange={(e) => setShippingSettings({ ...shippingSettings, standardShippingFee: Number(e.target.value) })}
+                    placeholder="70"
+                    className="w-full bg-[#091D12] border border-[#284234] focus:border-[#d4af37] text-white text-xs px-4 py-2.5 rounded-xl outline-none font-bold"
+                  />
+                  <p className="text-[11px] text-neutral-500">Standard charge added when order is under the threshold.</p>
+                </div>
+
+                {/* Estimated Delivery Days */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-300 block">
+                    Estimated Delivery Timeline
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingSettings.estimatedDeliveryDays}
+                    onChange={(e) => setShippingSettings({ ...shippingSettings, estimatedDeliveryDays: e.target.value })}
+                    placeholder="3-5 business days"
+                    className="w-full bg-[#091D12] border border-[#284234] focus:border-[#d4af37] text-white text-xs px-4 py-2.5 rounded-xl outline-none"
+                  />
+                  <p className="text-[11px] text-neutral-500">Shown to customers on the checkout page.</p>
+                </div>
+              </div>
+
+              {/* Sync Header Banner Checkbox */}
+              <div className="flex items-center gap-3 p-4 bg-[#091D12] border border-[#284234] rounded-xl">
+                <input
+                  type="checkbox"
+                  id="syncAnnouncement"
+                  checked={syncAnnouncementWithShipping}
+                  onChange={(e) => setSyncAnnouncementWithShipping(e.target.checked)}
+                  className="w-4 h-4 accent-[#d4af37] cursor-pointer"
+                />
+                <div>
+                  <label htmlFor="syncAnnouncement" className="text-xs font-bold text-white cursor-pointer select-none block">
+                    Auto-sync Header Announcement Bar
+                  </label>
+                  <span className="text-[11px] text-neutral-400">
+                    Automatically update header bar to &quot;FREE SHIPPING ON ORDERS OVER ₹{shippingSettings.freeShippingThreshold}&quot;
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-[#284234] flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShippingSettings(DEFAULT_SHIPPING_SETTINGS)}
+                  className="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-white transition"
+                >
+                  ↺ Reset to Default (₹499 Free / ₹70 Fee)
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingShipping}
+                  className="px-6 py-2.5 bg-[#d4af37] hover:bg-[#c29e2e] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer shadow-lg shadow-[#d4af37]/20"
+                >
+                  {isSavingShipping ? "Saving..." : "Save Delivery Settings"}
                 </button>
               </div>
             </form>

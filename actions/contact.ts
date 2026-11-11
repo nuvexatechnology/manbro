@@ -103,7 +103,7 @@ export async function sendContactEmailAction(formData: ContactFormData) {
   console.log(`To (Receiver): ${receiverEmail}`);
   console.log(`Subject: ${emailSubject}`);
   console.log(`Message:\n${message}`);
-  console.log(`=========================================================\\n`);
+  console.log(`=========================================================\n`);
 
   return {
     success: true,

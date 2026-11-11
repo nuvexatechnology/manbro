@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
     const maxAge = Math.floor(expiresAt - Date.now() / 1000);
 
     const response = NextResponse.json(
-      {\n        success: true,
+      {
+        success: true,
         user: {
           id: data.user.id,
           name,

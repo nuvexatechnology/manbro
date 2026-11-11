@@ -54,7 +54,8 @@ export function ProductFilters({ filters, categories, onFilterChange, onReset }:
           Category
         </label>
         <div className="flex flex-wrap gap-2">
-          {categoryOptions.map((cat) => (\n            <button
+          {categoryOptions.map((cat) => (
+            <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${

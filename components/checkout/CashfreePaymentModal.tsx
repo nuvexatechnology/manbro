@@ -246,7 +246,8 @@ export default function CashfreePaymentModal({
                 </button>
               </div>
             </div>
-          ) : errorMessage ? (\n            /* Error State */
+          ) : errorMessage ? (
+            /* Error State */
             <div className="space-y-4">
               <div className="w-14 h-14 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto text-red-400 text-2xl">
                 ⚠️

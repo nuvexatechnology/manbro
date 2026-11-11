@@ -6,16 +6,22 @@ import Link from "next/link";
 import { useCart } from "./cart-context";
 import { formatCurrency } from "@/lib/utils";
 import { calculateTotals } from "@/lib/pricing";
+import { useShippingSettings } from "@/lib/hooks/useShippingSettings";
 
 export function CartDrawer() {
   const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, subtotal, totalItems } = useCart();
 
   if (!isCartOpen) return null;
 
-  const FREE_SHIPPING_THRESHOLD = 999;
-  const progressToFreeShipping = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
-  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  const totals = calculateTotals(subtotal);
+  const { shippingSettings } = useShippingSettings();
+  const freeThreshold = shippingSettings.isFreeShippingEnabled ? shippingSettings.freeShippingThreshold : Infinity;
+  const progressToFreeShipping = freeThreshold === Infinity ? 0 : Math.min(100, (subtotal / freeThreshold) * 100);
+  const remainingForFreeShipping = freeThreshold === Infinity ? 0 : Math.max(0, freeThreshold - subtotal);
+  const totals = calculateTotals(subtotal, {
+    freeShippingThreshold: shippingSettings.freeShippingThreshold,
+    standardShippingFee: shippingSettings.standardShippingFee,
+    isFreeShippingEnabled: shippingSettings.isFreeShippingEnabled,
+  });
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -47,25 +53,27 @@ export function CartDrawer() {
           </div>
 
           {/* Free Shipping Progress */}
-          <div className="px-6 py-3 bg-[#11301F] border-b border-[#284234]">
-            <div className="flex justify-between text-xs text-neutral-300 mb-1.5 font-medium">
-              {remainingForFreeShipping > 0 ? (
-                <span>
-                  Add <strong className="text-[#d4af37]">{formatCurrency(remainingForFreeShipping)}</strong> more for free express shipping!
-                </span>
-              ) : (
-                <span className="text-[#d4af37] font-semibold flex items-center gap-1">
-                  ✓ You&apos;ve unlocked Free Express Shipping!
-                </span>
-              )}
+          {shippingSettings.isFreeShippingEnabled && (
+            <div className="px-6 py-3 bg-[#11301F] border-b border-[#284234]">
+              <div className="flex justify-between text-xs text-neutral-300 mb-1.5 font-medium">
+                {remainingForFreeShipping > 0 ? (
+                  <span>
+                    Add <strong className="text-[#d4af37]">{formatCurrency(remainingForFreeShipping)}</strong> more for free express shipping!
+                  </span>
+                ) : (
+                  <span className="text-[#d4af37] font-semibold flex items-center gap-1">
+                    ✓ You&apos;ve unlocked Free Express Shipping!
+                  </span>
+                )}
+              </div>
+              <div className="w-full h-1.5 bg-[#091D12] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#d4af37] origin-left transition-transform duration-300"
+                  style={{ transform: `scaleX(${progressToFreeShipping / 100})` }}
+                />
+              </div>
             </div>
-            <div className="w-full h-1.5 bg-[#091D12] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#d4af37] origin-left transition-transform duration-300"
-                style={{ transform: `scaleX(${progressToFreeShipping / 100})` }}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Cart Items List */}
           <div className="flex-1 overflow-y-auto px-6 py-4 divide-y divide-[#284234]">

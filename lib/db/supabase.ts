@@ -19,6 +19,61 @@ export async function getOrderByIdAndPhone(orderId: string, phone: string): Prom
   return { id: order.id, createdAt: order.createdAt, items: order.items, subtotal: order.subtotal, discount: order.discount, shipping: order.shipping, tax: order.tax, total: order.total, status: order.status, trackingInfo: order.trackingInfo };
 }
 
+export async function getOrderById(orderId: string): Promise<Order | null> {
+  const { data, error } = await getDb()
+    .from("manbro_orders")
+    .select("data")
+    .eq("id", orderId.trim().toUpperCase())
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.data as Order;
+}
+
+export async function confirmOrderPaymentInDb(orderId: string): Promise<boolean> {
+  const { data, error } = await getDb().rpc("manbro_update_order", {
+    p_id: orderId.trim().toUpperCase(),
+    p_patch: { status: "CONFIRMED" },
+  });
+  if (error) {
+    console.error("Failed to confirm order in database:", error);
+    return false;
+  }
+  return data === true;
+}
+
+export async function syncOrderTotalsInDb(
+  orderId: string,
+  totals: { shipping: number; tax: number; total: number }
+): Promise<Order | null> {
+  const db = getDb();
+  const { data: row, error: selectErr } = await db
+    .from("manbro_orders")
+    .select("data")
+    .eq("id", orderId.trim().toUpperCase())
+    .maybeSingle();
+
+  if (selectErr || !row?.data) return null;
+
+  const updatedOrder: Order = {
+    ...(row.data as Order),
+    shipping: totals.shipping,
+    tax: totals.tax,
+    total: totals.total,
+  };
+
+  const { error: updateErr } = await db
+    .from("manbro_orders")
+    .update({ data: updatedOrder })
+    .eq("id", orderId.trim().toUpperCase());
+
+  if (updateErr) {
+    console.error("Failed to sync order totals in db:", updateErr);
+    return null;
+  }
+
+  return updatedOrder;
+}
+
 export async function getAllOrdersDb(): Promise<Order[]> {
   await requireAdmin();
   const { data, error } = await getDb().from("manbro_orders").select("data").order("created_at", { ascending: false });

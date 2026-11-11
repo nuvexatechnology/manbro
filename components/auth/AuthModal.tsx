@@ -32,7 +32,7 @@ export function AuthModal() {
   const [registerError, setRegisterError] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
 
-  if (pathname.startsWith("/admin") || !isAuthModalOpen) return null;
+  if (pathname?.startsWith("/admin") || !isAuthModalOpen) return null;
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,15 +123,19 @@ export function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={closeAuthModal}
+    >
       <div
         className="relative w-full max-w-md bg-[#0D2417] border border-[#284234] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
+          type="button"
           onClick={closeAuthModal}
-          className="absolute top-4 right-4 text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-[#153422] transition"
+          className="absolute top-4 right-4 text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-[#153422] transition cursor-pointer"
           aria-label="Close modal"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,7 +163,7 @@ export function AuthModal() {
           <button
             type="button"
             onClick={() => switchAuthMode("login")}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition ${
+            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition cursor-pointer ${
               authModalMode === "login"
                 ? "bg-[#d4af37] text-black shadow"
                 : "text-neutral-400 hover:text-white"
@@ -170,7 +174,7 @@ export function AuthModal() {
           <button
             type="button"
             onClick={() => switchAuthMode("register")}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition ${
+            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition cursor-pointer ${
               authModalMode === "register"
                 ? "bg-[#d4af37] text-black shadow"
                 : "text-neutral-400 hover:text-white"

@@ -85,18 +85,35 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        return {
+          success: false,
+          error: "Server returned a non-JSON response. Please verify your server connection.",
+        };
+      }
+
       if (res.ok && data.success) {
         setUser(data.user);
         setIsAuthModalOpen(false);
         return { success: true };
       }
       return { success: false, error: data.error || "Login failed. Please check credentials." };
-    } catch {
-      return { success: false, error: "Network error during login. Please try again." };
+    } catch (err: any) {
+      console.error("Login request failed:", err);
+      return {
+        success: false,
+        error: "Cannot connect to server. Please verify 'npm run dev' is running in your terminal.",
+      };
     }
   };
 
@@ -105,10 +122,23 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        return {
+          success: false,
+          error: "Server returned a non-JSON response. Please verify your server connection.",
+        };
+      }
+
       if (res.ok && data.success) {
         if (data.user) {
           setUser(data.user);
@@ -117,8 +147,12 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
         return { success: true };
       }
       return { success: false, error: data.error || "Registration failed. Please try again." };
-    } catch {
-      return { success: false, error: "Network error during registration. Please try again." };
+    } catch (err: any) {
+      console.error("Registration request failed:", err);
+      return {
+        success: false,
+        error: "Cannot connect to server. Please verify 'npm run dev' is running in your terminal.",
+      };
     }
   };
 

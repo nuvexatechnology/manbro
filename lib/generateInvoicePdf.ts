@@ -132,21 +132,21 @@ export async function generateOrderInvoicePdf(order: Order, download: boolean = 
   const tableY = startY + 56;
 
   doc.setFillColor(9, 29, 18);
-  doc.rect(14, tableY, pageWidth - 28, 8, \"F\");
+  doc.rect(14, tableY, pageWidth - 28, 8, "F");
 
-  doc.setFont(\"helvetica\", \"bold\");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(212, 175, 55);
-  doc.text(\"#\", 18, tableY + 5.5);
-  doc.text(\"ITEM & SPECIFICATIONS\", 28, tableY + 5.5);
-  doc.text(\"SIZE / COLOR\", 110, tableY + 5.5);
-  doc.text(\"QTY\", 145, tableY + 5.5, { align: \"center\" });
-  doc.text(\"UNIT (INR)\", 165, tableY + 5.5, { align: \"right\" });
-  doc.text(\"TOTAL (INR)\", pageWidth - 18, tableY + 5.5, { align: \"right\" });
+  doc.text("#", 18, tableY + 5.5);
+  doc.text("ITEM & SPECIFICATIONS", 28, tableY + 5.5);
+  doc.text("SIZE / COLOR", 110, tableY + 5.5);
+  doc.text("QTY", 145, tableY + 5.5, { align: "center" });
+  doc.text("UNIT (INR)", 165, tableY + 5.5, { align: "right" });
+  doc.text("TOTAL (INR)", pageWidth - 18, tableY + 5.5, { align: "right" });
 
   // Products Table Rows
   let curY = tableY + 8;
-  doc.setFont(\"helvetica\", \"normal\");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
 
   order.items.forEach((item, idx) => {
@@ -156,29 +156,29 @@ export async function generateOrderInvoicePdf(order: Order, download: boolean = 
     } else {
       doc.setFillColor(255, 255, 255);
     }
-    doc.rect(14, curY, pageWidth - 28, 10, \"F\");
+    doc.rect(14, curY, pageWidth - 28, 10, "F");
     doc.setDrawColor(230, 235, 230);
     doc.line(14, curY + 10, pageWidth - 14, curY + 10);
 
     doc.setTextColor(9, 29, 18);
-    doc.setFont(\"helvetica\", \"bold\");
+    doc.setFont("helvetica", "bold");
     doc.text(`${idx + 1}`, 18, curY + 6.5);
 
     const itemName = item.product.name.length > 42 ? `${item.product.name.substring(0, 40)}...` : item.product.name;
     doc.text(itemName, 28, curY + 6.5);
 
-    doc.setFont(\"helvetica\", \"normal\");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 70, 65);
     doc.text(`${item.selectedSize} / ${item.selectedColor.name}`, 110, curY + 6.5);
-    doc.text(`${item.quantity}`, 145, curY + 6.5, { align: \"center\" });
+    doc.text(`${item.quantity}`, 145, curY + 6.5, { align: "center" });
 
     const unitPrice = item.product.price || 0;
     const lineTotal = unitPrice * item.quantity;
 
-    doc.text(unitPrice.toFixed(2), 165, curY + 6.5, { align: \"right\" });
-    doc.setFont(\"helvetica\", \"bold\");
+    doc.text(unitPrice.toFixed(2), 165, curY + 6.5, { align: "right" });
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(9, 29, 18);
-    doc.text(lineTotal.toFixed(2), pageWidth - 18, curY + 6.5, { align: \"right\" });
+    doc.text(lineTotal.toFixed(2), pageWidth - 18, curY + 6.5, { align: "right" });
 
     curY += 10;
   });
@@ -195,66 +195,66 @@ export async function generateOrderInvoicePdf(order: Order, download: boolean = 
 
   doc.setFillColor(248, 250, 248);
   doc.setDrawColor(218, 226, 220);
-  doc.roundedRect(totalsBoxX, curY, 76, 40, 2, 2, \"FD\");
+  doc.roundedRect(totalsBoxX, curY, 76, 40, 2, 2, "FD");
 
   doc.setFontSize(8.5);
-  doc.setFont(\"helvetica\", \"normal\");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 90, 85);
 
-  doc.text(\"Subtotal:\", totalsBoxX + 6, curY + 7);
-  doc.text(`INR ${subtotal.toFixed(2)}`, pageWidth - 18, curY + 7, { align: \"right\" });
+  doc.text("Subtotal:", totalsBoxX + 6, curY + 7);
+  doc.text(`INR ${subtotal.toFixed(2)}`, pageWidth - 18, curY + 7, { align: "right" });
 
-  doc.text(\"Delivery / Shipping:\", totalsBoxX + 6, curY + 14);
-  doc.text(shipping === 0 ? \"FREE\" : `INR ${shipping.toFixed(2)}`, pageWidth - 18, curY + 14, { align: \"right\" });
+  doc.text("Delivery / Shipping:", totalsBoxX + 6, curY + 14);
+  doc.text(shipping === 0 ? "FREE" : `INR ${shipping.toFixed(2)}`, pageWidth - 18, curY + 14, { align: "right" });
 
-  doc.text(\"GST (5%):\", totalsBoxX + 6, curY + 21);
-  doc.text(`INR ${gst.toFixed(2)}`, pageWidth - 18, curY + 21, { align: \"right\" });
+  doc.text("GST (5%):", totalsBoxX + 6, curY + 21);
+  doc.text(`INR ${gst.toFixed(2)}`, pageWidth - 18, curY + 21, { align: "right" });
 
   // Total Row in Box
   doc.setFillColor(9, 29, 18);
-  doc.roundedRect(totalsBoxX + 2, curY + 26, 72, 11, 1.5, 1.5, \"F\");
+  doc.roundedRect(totalsBoxX + 2, curY + 26, 72, 11, 1.5, 1.5, "F");
 
-  doc.setFont(\"helvetica\", \"bold\");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(212, 175, 55);
-  doc.text(\"Total Paid:\", totalsBoxX + 6, curY + 33.5);
-  doc.text(`INR ${total.toFixed(2)}`, pageWidth - 20, curY + 33.5, { align: \"right\" });
+  doc.text("Total Paid:", totalsBoxX + 6, curY + 33.5);
+  doc.text(`INR ${total.toFixed(2)}`, pageWidth - 20, curY + 33.5, { align: "right" });
 
   // Payment Status on Left of Totals Box
   const statusBoxX = 14;
   doc.setFillColor(248, 250, 248);
   doc.setDrawColor(218, 226, 220);
-  doc.roundedRect(statusBoxX, curY, 95, 40, 2, 2, \"FD\");
+  doc.roundedRect(statusBoxX, curY, 95, 40, 2, 2, "FD");
 
-  doc.setFont(\"helvetica\", \"bold\");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(9, 29, 18);
-  doc.text(\"PAYMENT & ORDER STATUS\", statusBoxX + 6, curY + 7);
+  doc.text("PAYMENT & ORDER STATUS", statusBoxX + 6, curY + 7);
 
-  doc.setFont(\"helvetica\", \"normal\");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(60, 70, 65);
-  doc.text(`Payment Gateway: ${order.shippingAddress.paymentMethod?.toUpperCase() || \"CASHFREE\"}`, statusBoxX + 6, curY + 14);
+  doc.text(`Payment Gateway: ${order.shippingAddress.paymentMethod?.toUpperCase() || "CASHFREE"}`, statusBoxX + 6, curY + 14);
   doc.text(`Order Status: ${order.status}`, statusBoxX + 6, curY + 20);
-  doc.text(`Tracking Partner: ${order.trackingInfo?.courierName || \"India Post Speed Post\"}`, statusBoxX + 6, curY + 26);
+  doc.text(`Tracking Partner: ${order.trackingInfo?.courierName || "India Post Speed Post"}`, statusBoxX + 6, curY + 26);
   if (order.trackingInfo?.trackingNumber) {
     doc.text(`Tracking ID: ${order.trackingInfo.trackingNumber}`, statusBoxX + 6, curY + 32);
   } else {
-    doc.text(\"Tracking ID: Dispatched upon dispatch\", statusBoxX + 6, curY + 32);
+    doc.text("Tracking ID: Dispatched upon dispatch", statusBoxX + 6, curY + 32);
   }
 
   // 5. Footer Terms & Authenticity Signature
   doc.setFillColor(212, 175, 55);
-  doc.rect(0, pageHeight - 16, pageWidth, 0.8, \"F\");
+  doc.rect(0, pageHeight - 16, pageWidth, 0.8, "F");
 
   doc.setFillColor(9, 29, 18);
-  doc.rect(0, pageHeight - 15.2, pageWidth, 15.2, \"F\");
+  doc.rect(0, pageHeight - 15.2, pageWidth, 15.2, "F");
 
-  doc.setFont(\"helvetica\", \"normal\");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(200, 215, 205);
-  doc.text(\"Thank you for choosing MANBRO Couture. All garments are crafted from sustainable organic materials.\", pageWidth / 2, pageHeight - 8.5, { align: \"center\" });
-  doc.text(\"This is a computer-generated tax invoice verified with QR Code authentication.\", pageWidth / 2, pageHeight - 4.5, { align: \"center\" });
+  doc.text("Thank you for choosing MANBRO Couture. All garments are crafted from sustainable organic materials.", pageWidth / 2, pageHeight - 8.5, { align: "center" });
+  doc.text("This is a computer-generated tax invoice verified with QR Code authentication.", pageWidth / 2, pageHeight - 4.5, { align: "center" });
 
   if (download) {
     doc.save(`MANBRO_Invoice_${order.id}.pdf`);

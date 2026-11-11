@@ -474,7 +474,8 @@ export default function AdminOrderDeskPage() {
                 {/* Items Summary & Financial Breakdown */}
                 <div className="border-t border-[#284234] pt-4 space-y-2 text-xs">
                   <h4 className="font-bold text-white uppercase">Order Items</h4>
-                  {selectedOrder.items.map((it) => (\n                    <div key={it.id} className="flex justify-between text-neutral-300">
+                  {selectedOrder.items.map((it) => (
+                    <div key={it.id} className="flex justify-between text-neutral-300">
                       <span>{it.product.name} ({it.selectedSize}, {it.selectedColor.name}) x{it.quantity}</span>
                       <span className="font-bold text-white">{formatCurrency(it.product.price * it.quantity)}</span>
                     </div>

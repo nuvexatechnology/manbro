@@ -176,8 +176,7 @@ export default function SalesReportSection({ orders }: SalesReportSectionProps) 
     setSearchQuery("");
   };
 
-  return (
-    <div className="space-y-8">
+  return (\n    <div className="space-y-8">
       {/* Top Banner & Excel Download Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#11301F] border border-[#284234] rounded-2xl p-6 shadow-xl">
         <div>

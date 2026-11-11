@@ -7,9 +7,10 @@ import Script from "next/script";
 import { useCart } from "@/components/cart/cart-context";
 import { useUserAuth } from "@/components/auth/user-auth-context";
 import { CheckoutFormValues, Order } from "@/types/store";
-import { processCashfreeOrderAction } from "@/actions/order";
+import { processCashfreeOrderAction, verifyCashfreeOrderAction } from "@/actions/order";
 import { formatCurrency } from "@/lib/utils";
 import { calculateTotals } from "@/lib/pricing";
+import { useShippingSettings } from "@/lib/hooks/useShippingSettings";
 import CashfreePaymentModal from "@/components/checkout/CashfreePaymentModal";
 import { generateOrderInvoicePdf } from "@/lib/generateInvoicePdf";
 import { toast } from "@/components/ui/toast";
@@ -35,14 +36,15 @@ export default function CheckoutPage() {
   // Auto-fill form values when user logs in
   React.useEffect(() => {
     if (user) {
-      const parts = user.name.split(" ");
+      const parts = (user.name || "").trim().split(/\s+/);
       const firstName = parts[0] || "";
-      const lastName = parts.slice(1).join(" ") || "";
+      const lastName = parts.slice(1).join(" ") || (firstName ? "." : "");
       setFormValues((prev) => ({
         ...prev,
         firstName: prev.firstName || firstName,
         lastName: prev.lastName || lastName,
-        phone: prev.phone || user.phone,
+        phone: prev.phone || user.phone || "",
+        email: prev.email || user.email || "",
       }));
     }
   }, [user]);
@@ -56,11 +58,17 @@ export default function CheckoutPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
   const [paymentSessionId, setPaymentSessionId] = useState<string>("");
+  const [paymentEnvironment, setPaymentEnvironment] = useState<"SANDBOX" | "PRODUCTION">("PRODUCTION");
 
   const submitting = useRef(false);
   const submission = useRef<{ payload: string; requestId: string } | null>(null);
 
-  const totals = calculateTotals(subtotal);
+  const { shippingSettings } = useShippingSettings();
+  const totals = calculateTotals(subtotal, {
+    freeShippingThreshold: shippingSettings.freeShippingThreshold,
+    standardShippingFee: shippingSettings.standardShippingFee,
+    isFreeShippingEnabled: shippingSettings.isFreeShippingEnabled,
+  });
 
   // Address completeness check
   const isAddressComplete = Boolean(
@@ -87,15 +95,25 @@ export default function CheckoutPage() {
     const newErrors: Partial<Record<keyof CheckoutFormValues, string>> = {};
 
     if (!formValues.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formValues.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formValues.phone.trim() || formValues.phone.replace(/\D/g, "").length < 10) {
+
+    // Single-name support (e.g. "Niyas" without surname): use "." if empty
+    let effectiveLastName = formValues.lastName.trim();
+    if (!effectiveLastName && formValues.firstName.trim()) {
+      effectiveLastName = ".";
+      setFormValues((prev) => ({ ...prev, lastName: "." }));
+    } else if (!effectiveLastName) {
+      newErrors.lastName = "Last name is required";
+    }
+
+    const cleanPhone = formValues.phone.trim().replace(/\D/g, "");
+    if (!cleanPhone || cleanPhone.length < 10) {
       newErrors.phone = "Enter valid 10-digit mobile number";
     }
     if (!formValues.email.trim() || !formValues.email.includes("@")) {
-      newErrors.email = "Valid email address is required";
+      newErrors.email = "Valid email address is required (e.g. name@example.com)";
     }
     if (!formValues.address.trim() || formValues.address.trim().length < 5) {
-      newErrors.address = "Complete street address is required";
+      newErrors.address = "Complete street address is required (min 5 characters)";
     }
     if (!formValues.city.trim()) newErrors.city = "City is required";
     if (!formValues.state.trim()) newErrors.state = "State is required";
@@ -104,15 +122,28 @@ export default function CheckoutPage() {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstField = Object.keys(newErrors)[0];
+      const targetInput = document.querySelector(`[name="${firstField}"]`) as HTMLElement | null;
+      if (targetInput) {
+        targetInput.focus();
+        targetInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return false;
+    }
+
+    return true;
   };
 
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Strict validation: Do not allow placing order without full address
+    // Strict validation: Highlight any missing fields
     if (!validateAddressStrict()) {
-      setFormError("Please fill in all mandatory delivery address fields before proceeding to payment.");
+      const msg = "Please complete all mandatory delivery fields highlighted in red above.";
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -122,36 +153,59 @@ export default function CheckoutPage() {
     setFormError("");
 
     try {
-      const payload = JSON.stringify({ formValues, cart });
+      const finalFormValues: CheckoutFormValues = {
+        ...formValues,
+        lastName: formValues.lastName.trim() || ".",
+      };
+
+      const payload = JSON.stringify({ formValues: finalFormValues, cart });
       if (submission.current?.payload !== payload) {
         submission.current = { payload, requestId: crypto.randomUUID() };
       }
 
-      const res = await processCashfreeOrderAction(formValues, cart, submission.current.requestId);
+      const res = await processCashfreeOrderAction(finalFormValues, cart, submission.current.requestId);
 
       if (res.success && res.order) {
         setPendingOrder(res.order);
         setPaymentSessionId(res.paymentSessionId || "");
+        if (res.environment) setPaymentEnvironment(res.environment);
         setIsModalOpen(true);
       } else {
         if (res.validationErrors) setErrors(res.validationErrors);
-        setFormError(res.error || "Unable to proceed to payment. Please review your address details.");
+        const errMsg = res.error || "Unable to proceed to payment. Please review your address details.";
+        setFormError(errMsg);
+        toast.error(errMsg);
       }
-    } catch {
-      setFormError("We could not initialize checkout. Please check your connection and retry.");
+    } catch (err: any) {
+      console.error("Checkout submission error:", err);
+      const netMsg = err?.message || "We could not initialize checkout. Please check your connection and retry.";
+      setFormError(netMsg);
+      toast.error(netMsg);
     } finally {
       submitting.current = false;
       setIsSubmitting(false);
     }
   };
 
-  const handlePaymentSuccess = (paymentDetails: any) => {
+  const handlePaymentSuccess = async (paymentDetails: any) => {
     setIsModalOpen(false);
     if (pendingOrder) {
-      setCompletedOrder({
-        ...pendingOrder,
-        status: "CONFIRMED",
-      });
+      try {
+        const verifyRes = await verifyCashfreeOrderAction(pendingOrder.id);
+        if (verifyRes.success && verifyRes.order) {
+          setCompletedOrder(verifyRes.order);
+        } else {
+          setCompletedOrder({
+            ...pendingOrder,
+            status: "CONFIRMED",
+          });
+        }
+      } catch {
+        setCompletedOrder({
+          ...pendingOrder,
+          status: "CONFIRMED",
+        });
+      }
       clearCart();
     }
   };
@@ -274,7 +328,7 @@ export default function CheckoutPage() {
   return (
     <>
       {/* Cashfree Official SDK Script */}
-      <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="lazyOnload" />
+      <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="afterInteractive" />
 
       <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Page Header */}
@@ -292,7 +346,7 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-        <form onSubmit={handleProceedToPayment} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
+        <form noValidate onSubmit={handleProceedToPayment} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
           {/* Left Column: Delivery Address Form */}
           <fieldset disabled={isSubmitting} className="lg:col-span-7 space-y-6 min-w-0">
             <div className="bg-[#11301F]/80 border border-[#284234] rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-xl">
@@ -314,7 +368,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    First Name *
+                    First Name <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -323,16 +377,15 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     placeholder="e.g. Rahul"
                     className={`w-full bg-[#091D12] border ${
-                      errors.firstName ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.firstName ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.firstName && <span className="text-[10px] text-red-400 mt-1 block">{errors.firstName}</span>}
+                  {errors.firstName && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.firstName}</span>}
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    Last Name *
+                    Last Name <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -341,11 +394,10 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     placeholder="e.g. Sharma"
                     className={`w-full bg-[#091D12] border ${
-                      errors.lastName ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.lastName ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.lastName && <span className="text-[10px] text-red-400 mt-1 block">{errors.lastName}</span>}
+                  {errors.lastName && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.lastName}</span>}
                 </div>
               </div>
 
@@ -353,7 +405,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    Phone Number (10 Digits) *
+                    Phone Number (10 Digits) <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="tel"
@@ -363,16 +415,15 @@ export default function CheckoutPage() {
                     placeholder="9876543210"
                     maxLength={15}
                     className={`w-full bg-[#091D12] border ${
-                      errors.phone ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.phone ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.phone && <span className="text-[10px] text-red-400 mt-1 block">{errors.phone}</span>}
+                  {errors.phone && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.phone}</span>}
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    Email Address *
+                    Email Address <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="email"
@@ -381,18 +432,17 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     placeholder="rahul@example.com"
                     className={`w-full bg-[#091D12] border ${
-                      errors.email ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.email ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.email && <span className="text-[10px] text-red-400 mt-1 block">{errors.email}</span>}
+                  {errors.email && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.email}</span>}
                 </div>
               </div>
 
               {/* Street Address */}
               <div>
                 <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                  Complete Street Address (Flat / House No / Landmark) *
+                  Complete Street Address (Flat / House No / Landmark) <span className="text-red-400 font-bold">*</span>
                 </label>
                 <input
                   type="text"
@@ -401,18 +451,17 @@ export default function CheckoutPage() {
                   onChange={handleInputChange}
                   placeholder="Flat 402, Sunshine Heights, 12th Main Road, Indiranagar"
                   className={`w-full bg-[#091D12] border ${
-                    errors.address ? "border-red-500" : "border-[#284234]"
-                  } rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                  required
+                    errors.address ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                  } rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition`}
                 />
-                {errors.address && <span className="text-[10px] text-red-400 mt-1 block">{errors.address}</span>}
+                {errors.address && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.address}</span>}
               </div>
 
               {/* City, State, Pincode */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    City *
+                    City <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -421,16 +470,15 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     placeholder="Bengaluru"
                     className={`w-full bg-[#091D12] border ${
-                      errors.city ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.city ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.city && <span className="text-[10px] text-red-400 mt-1 block">{errors.city}</span>}
+                  {errors.city && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.city}</span>}
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    State *
+                    State <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -439,16 +487,15 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     placeholder="Karnataka"
                     className={`w-full bg-[#091D12] border ${
-                      errors.state ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.state ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.state && <span className="text-[10px] text-red-400 mt-1 block">{errors.state}</span>}
+                  {errors.state && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.state}</span>}
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                    Pincode *
+                    Pincode <span className="text-red-400 font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -458,11 +505,10 @@ export default function CheckoutPage() {
                     placeholder="560038"
                     maxLength={10}
                     className={`w-full bg-[#091D12] border ${
-                      errors.pincode ? "border-red-500" : "border-[#284234]"
-                    } rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-[#d4af37] transition`}
-                    required
+                      errors.pincode ? "border-red-500 bg-red-950/20 ring-1 ring-red-500/50" : "border-[#284234] focus:border-[#d4af37]"
+                    } rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none transition`}
                   />
-                  {errors.pincode && <span className="text-[10px] text-red-400 mt-1 block">{errors.pincode}</span>}
+                  {errors.pincode && <span className="text-[10px] text-red-400 mt-1 block font-medium">⚠️ {errors.pincode}</span>}
                 </div>
               </div>
 
@@ -566,6 +612,11 @@ export default function CheckoutPage() {
                 <span>Shipping / Delivery</span>
                 <span>{totals.shipping === 0 ? <strong className="text-[#d4af37]">FREE</strong> : formatCurrency(totals.shipping)}</span>
               </div>
+              {shippingSettings.estimatedDeliveryDays && (
+                <div className="text-[10px] text-neutral-400 text-right font-medium -mt-1">
+                  Est. Delivery: {shippingSettings.estimatedDeliveryDays}
+                </div>
+              )}
               <div className="flex justify-between text-neutral-300">
                 <span>GST (5%)</span>
                 <span className="text-white font-medium">{formatCurrency(totals.tax)}</span>
@@ -584,22 +635,25 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Address Requirement Warning */}
+            {/* Address Requirement Notice */}
             {!isAddressComplete && (
-              <div className="p-3 bg-[#091D12] border border-[#284234] rounded-xl text-[11px] text-amber-300/90 flex items-center gap-2">
+              <div className="p-3 bg-[#091D12] border border-amber-500/30 rounded-xl text-[11px] text-amber-300/90 flex items-center gap-2">
                 <span>📍</span>
-                <span>Please complete your full shipping address above to enable order placement.</span>
+                <span>Please fill in your delivery details above. Missing fields will be highlighted if you proceed.</span>
               </div>
             )}
 
             {/* Submit Action Button */}
             <button
               type="submit"
-              disabled={isSubmitting || !isAddressComplete}
-              className="w-full py-4 bg-[#d4af37] hover:bg-[#c29e2e] text-black font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-98 shadow-xl shadow-[#d4af37]/20 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              disabled={isSubmitting}
+              className="w-full py-4 bg-[#d4af37] hover:bg-[#c29e2e] text-black font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-98 shadow-xl shadow-[#d4af37]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? (
-                <span>Securing Order Session...</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Connecting to Cashfree...</span>
+                </div>
               ) : (
                 <span>Proceed to Pay {formatCurrency(totals.total)}</span>
               )}
@@ -621,6 +675,7 @@ export default function CheckoutPage() {
             amount={pendingOrder.total}
             customerName={`${pendingOrder.shippingAddress.firstName} ${pendingOrder.shippingAddress.lastName}`}
             paymentSessionId={paymentSessionId}
+            environment={paymentEnvironment}
             onClose={() => setIsModalOpen(false)}
             onSuccess={handlePaymentSuccess}
             onFailure={handlePaymentFailure}

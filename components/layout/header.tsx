@@ -94,7 +94,8 @@ export function Header() {
               )}
 
               {/* Discount Code */}
-              {(announcements.offerText || announcements.offerCode) && (\n                <div className="hidden md:flex items-center gap-2">
+              {(announcements.offerText || announcements.offerCode) && (
+                <div className="hidden md:flex items-center gap-2">
                   <svg
                     className="w-4 h-4 text-[#d4af37] shrink-0"
                     fill="currentColor"

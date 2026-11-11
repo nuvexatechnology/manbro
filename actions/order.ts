@@ -3,8 +3,10 @@
 import { z } from "zod";
 import type { CheckoutFormValues, CartItem, Order, OrderStatus, IndiaPostTracking } from "@/types/store";
 import { checkoutInput, cartInput, orderStatusInput, trackingInput } from "@/lib/validators/store";
-import { createOrderInDb, getOrderByIdAndPhone, getAllOrdersDb, updateOrderStatusDb, addIndiaPostTrackingDb, updateAdminNotesDb } from "@/lib/db/supabase";
+import { createOrderInDb, getOrderByIdAndPhone, getAllOrdersDb, updateOrderStatusDb, addIndiaPostTrackingDb, updateAdminNotesDb, getOrderById, confirmOrderPaymentInDb, syncOrderTotalsInDb } from "@/lib/db/supabase";
 import { isAdmin } from "@/lib/auth/admin";
+import { calculateTotals } from "@/lib/pricing";
+import { getShippingSettings } from "@/lib/db/settings";
 
 import { createCashfreeOrderSession, verifyCashfreePayment } from "@/lib/cashfree";
 
@@ -46,6 +48,31 @@ export async function processCashfreeOrderAction(formValues: CheckoutFormValues,
     return { success: false, error: error instanceof Error ? error.message : "Unable to place order. Please retry." };
   }
 
+  // Recalculate and synchronize order totals with active store settings (shipping threshold & 5% GST)
+  try {
+    const shippingSettings = await getShippingSettings();
+    const accurateTotals = calculateTotals(order.subtotal, {
+      freeShippingThreshold: shippingSettings.freeShippingThreshold,
+      standardShippingFee: shippingSettings.standardShippingFee,
+      isFreeShippingEnabled: shippingSettings.isFreeShippingEnabled,
+    });
+
+    order.shipping = accurateTotals.shipping;
+    order.tax = accurateTotals.tax;
+    order.total = accurateTotals.total;
+
+    const syncedOrder = await syncOrderTotalsInDb(order.id, {
+      shipping: accurateTotals.shipping,
+      tax: accurateTotals.tax,
+      total: accurateTotals.total,
+    });
+    if (syncedOrder) {
+      order = syncedOrder;
+    }
+  } catch (syncErr) {
+    console.warn("Could not sync live shipping totals to order, using base totals:", syncErr);
+  }
+
   // Initiate Cashfree Session
   try {
     const session = await createCashfreeOrderSession({
@@ -59,12 +86,11 @@ export async function processCashfreeOrderAction(formValues: CheckoutFormValues,
       },
     });
 
-    if (session.error) {
+    if (session.error || !session.paymentSessionId) {
       return {
-        success: true,
+        success: false,
         order,
-        paymentSessionId: session.paymentSessionId || `mock_session_${order.id}`,
-        warning: session.error,
+        error: session.error || "Failed to create Cashfree payment session.",
       };
     }
 
@@ -73,12 +99,48 @@ export async function processCashfreeOrderAction(formValues: CheckoutFormValues,
       order,
       paymentSessionId: session.paymentSessionId,
       cfOrderId: session.cfOrderId,
+      environment: session.environment,
     };
   } catch (err) {
     return {
-      success: true,
+      success: false,
       order,
-      paymentSessionId: `mock_session_${order.id}`,
+      error: err instanceof Error ? err.message : "Unable to initiate Cashfree payment gateway session.",
+    };
+  }
+}
+
+export async function verifyCashfreeOrderAction(orderId: string) {
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { success: false, error: "Invalid order identifier." };
+  }
+
+  try {
+    const result = await verifyCashfreePayment(orderId);
+    if (!result.isPaid) {
+      return {
+        success: false,
+        isPaid: false,
+        orderStatus: result.orderStatus || "PENDING",
+        error: result.error || "Payment has not been confirmed yet.",
+      };
+    }
+
+    // Mark order as CONFIRMED in database
+    await confirmOrderPaymentInDb(orderId);
+    const order = await getOrderById(orderId);
+
+    return {
+      success: true,
+      isPaid: true,
+      orderStatus: "CONFIRMED",
+      order,
+      paymentDetails: result.paymentDetails,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Payment verification failed.",
     };
   }
 }
@@ -100,13 +162,31 @@ export async function processWhatsAppOrderAction(formValues: CheckoutFormValues,
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : "Unable to save order. Please retry." };
   }
+
+  // Recalculate totals with store shipping settings
+  try {
+    const shippingSettings = await getShippingSettings();
+    const accurateTotals = calculateTotals(order.subtotal, {
+      freeShippingThreshold: shippingSettings.freeShippingThreshold,
+      standardShippingFee: shippingSettings.standardShippingFee,
+      isFreeShippingEnabled: shippingSettings.isFreeShippingEnabled,
+    });
+    order.shipping = accurateTotals.shipping;
+    order.tax = accurateTotals.tax;
+    order.total = accurateTotals.total;
+    const syncedOrder = await syncOrderTotalsInDb(order.id, accurateTotals);
+    if (syncedOrder) order = syncedOrder;
+  } catch (syncErr) {
+    console.warn("Could not sync live shipping totals to whatsapp order:", syncErr);
+  }
+
   const address = order.shippingAddress;
   const message = [
     `NEW ORDER #${order.id}`, "Store: MANBRO COUTURE", "",
     `Customer: ${address.firstName} ${address.lastName}`, `Phone: ${address.phone}`, `Email: ${address.email}`,
     `Address: ${address.address}, ${address.city}, ${address.state} - ${address.pincode}`, address.notes ? `Notes: ${address.notes}` : "", "",
-    ...order.items.map((item, i) => `${i + 1}. ${item.product.name} (${item.selectedSize}, ${item.selectedColor.name}) x${item.quantity} - $${(item.product.price * item.quantity).toFixed(2)}`),
-    "", `Total: $${order.total.toFixed(2)} (Shipping: $${order.shipping}, Tax: $${order.tax})`,
+    ...order.items.map((item, i) => `${i + 1}. ${item.product.name} (${item.selectedSize}, ${item.selectedColor.name}) x${item.quantity} - ₹${(item.product.price * item.quantity).toFixed(2)}`),
+    "", `Total: ₹${order.total.toFixed(2)} (Shipping: ₹${order.shipping}, Tax: ₹${order.tax})`,
     `Please confirm order #${order.id} and send payment instructions.`,
   ].join("\n");
   return { success: true, order, whatsappUrl: `https://wa.me/${phone}?text=${encodeURIComponent(message)}` };

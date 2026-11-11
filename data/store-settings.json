@@ -1,0 +1,16 @@
+{
+  "shipping_settings": {
+    "standardShippingFee": 70,
+    "freeShippingThreshold": 1,
+    "isFreeShippingEnabled": true,
+    "estimatedDeliveryDays": "3-5 business days",
+    "updatedAt": "2026-11-11T13:30:00.000Z"
+  },
+  "site_announcements": {
+    "freeShippingText": "FREE SHIPPING ON ALL ORDERS ABOVE ₹1",
+    "offerText": "10% OFF YOUR FIRST ORDER",
+    "offerCode": "",
+    "isEnabled": true,
+    "updatedAt": "2026-11-11T13:30:00.000Z"
+  }
+}

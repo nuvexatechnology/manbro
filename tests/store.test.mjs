@@ -16,7 +16,9 @@ const line = { productId: product.id, size: "M", color: "Black", quantity: 1 };
 
 test("shipping boundary and runtime validation reject malformed checkout data", () => {
   assert.deepEqual(calculateTotals(1000), { subtotal: 1000, discount: 0, shipping: 0, tax: 50, total: 1050 });
-  assert.equal(calculateTotals(500).shipping, 70);
+  assert.equal(calculateTotals(1).shipping, 0);
+  assert.equal(calculateTotals(0).shipping, 70);
+  assert.equal(calculateTotals(400, { freeShippingThreshold: 500 }).shipping, 70);
   assert.equal(checkoutInput.safeParse(address).success, true);
   for (const phone of ["", "abc", "1234"]) assert.equal(checkoutInput.safeParse({ ...address, phone }).success, false);
   for (const quantity of [-1, 0, 0.5, Infinity, 101, "1"]) assert.equal(cartInput.safeParse([{ product: { id: product.id }, selectedSize: "M", selectedColor: { name: "Black" }, quantity }]).success, false);
@@ -58,7 +60,7 @@ test("migration transactions enforce stock, trusted prices, retries, cancellatio
   assert.equal(await stock(), 1);
   await cancel();
   assert.equal(await stock(), 1, "repeated cancellation does not double-restock");
-  await assert.rejects(db.query("select manbro_update_order($1,$2)", [order.id, { status: "NEW" }]), /cannot be reopened/);
+  await assert.rejects(db.query("select manbro_update_order($1,$2)"), /cannot be reopened/);
   const staleWrite = await db.query("update manbro_products set data=data where id=$1 and version=1 returning id", [product.id]);
   assert.equal(staleWrite.rows.length, 0, "stale admin forms cannot overwrite changed stock");
   for (const role of ["anon", "authenticated"]) {
@@ -93,7 +95,9 @@ test("all admin action and API entrypoints reject unauthenticated calls before d
     "server-only": {},
     "@/lib/auth/admin": { isAdmin: async () => false, isSameOrigin: () => true },
     "@/lib/db/client": { getDb: () => { throw new Error("Database must not be touched"); } },
-    "@/lib/db/catalog": {}, "@/lib/db/supabase": {}, "@/lib/validators/store": {},
+    "@/lib/db/catalog": {}, "@/lib/db/supabase": {}, "@/lib/validators/store": {}, "@/lib/cashfree": {},
+    "@/lib/pricing": { calculateTotals: (val) => ({ subtotal: val, discount: 0, shipping: 0, tax: 0, total: val }) },
+    "@/lib/db/settings": { getShippingSettings: async () => ({ standardShippingFee: 70, freeShippingThreshold: 499, isFreeShippingEnabled: true }) },
   };
   const actions = load("../actions/order.ts", mocks);
   for (const name of ["getAdminOrdersAction", "updateOrderStatusAction", "addIndiaPostTrackingAction", "updateAdminNotesAction"]) {
@@ -111,13 +115,17 @@ test("tracking requires exact normalized phone and excludes private customer fie
   const order = { id: "ORD-" + randomUUID().toUpperCase(), createdAt: new Date().toISOString(), items: [], subtotal: 60, discount: 0, shipping: 15, tax: 5, total: 80, status: "NEW", shippingAddress: address, adminNotes: "PRIVATE" };
   let queries = 0;
   const mocks = {
-    "server-only": {}, "@/lib/auth/admin": { requireAdmin: async () => {} },
-    "./client": { getDb: () => ({ from: () => {
-      queries++;
-      const filters = {};
-      const query = { select: () => query, eq: (key, value) => { filters[key] = value; return query; }, maybeSingle: async () => ({ data: filters.phone === address.phone ? { data: order } : null, error: null }) };
-      return query;
-    } }) },
+    "server-only": {}, "@/lib/auth/admin": { requireAdmin: async () => { } },
+    "./client": {
+      getDb: () => ({
+        from: () => {
+          queries++;
+          const filters = {};
+          const query = { select: () => query, eq: (key, value) => { filters[key] = value; return query; }, maybeSingle: async () => ({ data: filters.phone === address.phone ? { data: order } : null, error: null }) };
+          return query;
+        }
+      })
+    },
   };
   const repository = load("../lib/db/supabase.ts", mocks);
   for (const phone of ["", "abc", "1234"]) assert.equal(await repository.getOrderByIdAndPhone(order.id, phone), null);
